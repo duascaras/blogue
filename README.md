@@ -18,6 +18,37 @@
 
 - Template: Presentation layer, using a plain-text system that keeps everything that the browser renders.
 
+## Management commands
+
+```
+// To create the file structure for a new Django project named mysite (for example):
+django-admin startproject mysite 
+
+// To create the file structure for a new Django application named blog (for example):
+python manage.py startapp blog
+
+// To apply all database migrations:
+python manage.py migrate
+
+// To create migrations for the models of the blog application:
+python manage.py makemigrations blog
+
+// To view the SQL statements that will be executed with the first migration of the blog application:
+python manage.py sqlmigrate blog 0001
+
+// To run the Django development server:
+python manage.py runserver
+
+// To run the development server specifying host/port and settings file:
+python manage.py runserver 127.0.0.1:8001 --settings=mysite.settings
+
+//To run the Django shell:
+python manage.py shell
+
+To create a superuser using the Django authentication framework:
+python manage.py createsuperuser
+```
+
 ## QuerySets and managers
 
 - The Django ORM is a way of interact with the database in a Pythonic way, instead of writing raw SQL queries.
@@ -69,28 +100,28 @@ select_related(*fields) # Optimizes queries for ForeignKey relationships.
 prefetch_related(*fields) # Optimizes queries for ManyToMany relationships.
 ```
 
-#### Limiting Results
+### Limiting Results
 
-- You can limit results by using Python array-slicing. For example:
+- We can limit results by using Python array-slicing. For example:
 ```
 Post.objects.all()[:5]
 ```
 
-#### Q Objects 
+### Q Objects 
 
 - Field lookups using filter() are joined with a SQL _AND_ operator. 
 
 - For example, filter(field1='foo ', field2='bar') will retrieve objects where field1 is _foo_ and field2 is _bar_. If you need to build more complex queries, such as queries with _OR_ statements, you can use Q objects.
 
 - A Q object allows you to encapsulate a collection of field lookups. You can compose statements by combining Q objects with the & (and), | (or), and ^ (xor) operators.
-```
+``` python shell
 from django.db.models import Q
 starts_who = Q(title__istartswith='who')
 starts_why = Q(title__istartswith='why')
 Post.objects.filter(starts_who | starts_why) # Bulding a OR statement
 ```
 
-#### QuerySets evalutation
+### QuerySets evalutation
 
 - QuerySet doestn't involve database activity until it is evaluated; 
 
@@ -99,14 +130,59 @@ Post.objects.filter(starts_who | starts_why) # Bulding a OR statement
 - When a QuerySet is evaluated, it translates into a SQL query to the database;
 
 - QuerySets are only evaluated in the following cases:
+    - The first time you iterate over them
+    - When you slice them, for instance, Post.objects.all()[:3]
+    - When you pickle or cache them
+    - When you call repr() or len() on them
+    - When you explicitly call list() on them
+    - When you test them in a statement, such as bool(), or, and, or if
+
+## Django Views and URLs
+
+- A Django view is just a Python function that receives a web request and returns a web responde.
+
+- The responde normally is HTML code.
+
+- We can create a URL file to add our urlpatterns (at the app level).
+
+- We need to add the url patterns created to our urls file (at the project level).
 ```
-• The first time you iterate over them
-• When you slice them, for instance, Post.objects.all()[:3]
-• When you pickle or cache them
-• When you call repr() or len() on them
-• When you explicitly call list() on them
-• When you test them in a statement, such as bool(), or, and, or if
+# For example:
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('blog/', include('blog.urls', namespace='blog')), # This new line
+]
 ```
+
+- Namespaces have to be unique across the entire project.
+    - We can refer to our app URLs easily by using the namespace followed by a colon and the URL name.
+    - For example, blog:post_list and blog:post_detail.
+
+- Templates define how the data is displayed.
+    - Usually written in HTML in combination with Django template language.
+    - The template language is based on _template tags_, _template variables_ and _template filters_.
+        - Template tags control the rendering of the template and look like this: {% tag %}.
+        - Template variables get replaced with values when the template is rendered and look like this: {{ variable }}.
+        - Template filters allow you to modify variables for display and look like this: {{ variable|filter }}.
+
+- We generally have a base.html file
+    - Other html files can|should inherit from the base template.
+
+- We should use the {% url %} template tag provided by Django.
+    - This template allows build URLs dynamically by their name.
+    - Follows the DRY principle by not having to hard-code URLs in the templates.
+
+```
+# For example:
+<a href="{% url 'gueblo:post_detail' post.id %}">
+```
+
+### The Request/Response cycle
+
+![Alt text](/home/gustavo/Repos/blogue/docs/request_response_cycle.png "Request/Response Cycle")
+
+> [!NOTE]
+> This schema doesn't include Django middleware for the sake of simplicity.
 
 ## General Notes
 
